@@ -8,8 +8,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3eba8e73-7973-4d08-b5ee-84b4b99d19d7" name="Changes" comment="[update] pallet renting">
-      <change beforePath="$PROJECT_DIR$/pallets/nft_currency/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/nft_currency/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pallets/nft_currency/src/nft.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/nft_currency/src/nft.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,7 +75,7 @@
       <workItem from="1662908342505" duration="636000" />
       <workItem from="1662923081118" duration="230000" />
       <workItem from="1662999434788" duration="1020000" />
-      <workItem from="1663082812239" duration="2603000" />
+      <workItem from="1663082812239" duration="2925000" />
     </task>
     <task id="LOCAL-00001" summary="[update] pallet renting">
       <created>1661739706711</created>
@@ -99,7 +98,14 @@
       <option name="project" value="LOCAL" />
       <updated>1662923267500</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="[update] pallet renting">
+      <created>1663090188359</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1663090188359</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
