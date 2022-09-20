@@ -28,36 +28,44 @@ pub mod pallet {
 
 	#[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 	pub enum Status {
+		None,
+		// if lender puts on for rent or borrower makes an offer
 		Created,
-		// if lender puts on for rent
+		// if both side accepts offer
 		Started,
-		// if borrower accepts order
-		Terminated, // if due_date is over
+		// if due_date renting is over
+		Terminated,
+	}
+
+	#[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+	pub enum OrderType {
+		None,
+		ForRent,
+		OfferRenting,
 	}
 
 	#[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
 	#[scale_info(skip_type_params(T))]
-	pub struct RentingInfo<T: Config> {
-		lender: T::AccountId,
-		borrower: T::AccountId,
-		fee: u64, // total fee that borrower must pay
+	pub struct Order<T: Config> {
+		maker: T::AccountId,
+		taker: T::AccountId,
+		value: u64, // total fee that borrower must pay
 		token: Vec<u8>,
 		due_date: u64,
 		status: Status,
+		order_type: OrderType,
 	}
 
-	#[derive(Clone, Encode, Decode, PartialEq, TypeInfo, Debug)]
-	#[scale_info(skip_type_params(T))]
-	pub struct OrderInfo<T: Config> {
-		owner:T::AccountId,
-		fee: u64, // fee per day
-		token_id: Vec<u8>,
-		expire_date: u64
-	}
 
 	impl Default for Status {
 		fn default() -> Self {
-			Status::Started
+			Status::None
+		}
+	}
+
+	impl Default for OrderType {
+		fn default() -> Self {
+			OrderType::None
 		}
 	}
 
@@ -131,15 +139,12 @@ pub mod pallet {
 	#[pallet::call ]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(35_678_000)]
-		pub fn create_rental(origin: OriginFor<T>, lender: T::AccountId, borrower: T::AccountId, token_id: Vec<u8>, fee: u64, due_date: u64, message:Vec<Vec<u8>>, signature: Vec<u8>) -> DispatchResult {
+		pub fn create_rental(origin: OriginFor<T>, lender: T::AccountId, borrower: T::AccountId,order_re: RentingInfo<T>,message:Vec<Vec<u8>>, signature: Vec<u8>) -> DispatchResult {
 			let caller = ensure_signed(origin)?;
 			Self::verify_signature(message[0].clone(),signature.clone(),&lender)?;
-			ensure!(due_date <= message.expire_date, Error::<T>::InvalidDate);
-			ensure!(token_id == data.token_id, Error::<T>::NotMatchToken);
-			let total_renting_days = Self::calculate_day_renting(due_date);
-			ensure!(fee == total_renting_days.mul(data.fee), Error::<T>::NotEnoughFee);
+			let total_renting_days = Self::calculate_day_renting(order.due_date);
 
-			let _ = T::Currency::transfer(&borrower,&lender,fee.saturated_into(),ExistenceRequirement::KeepAlive);
+			let _ = T::Currency::transfer(&borrower,&lender,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
 			Ok(())
 		}
 	}
@@ -163,7 +168,6 @@ impl<T: Config> Pallet<T> {
 		// In Polkadot, the AccountId is always the same as the 32 byte public key.
 		let account_bytes: [u8; 32] = account_to_bytes(who)?;
 		let public_key = sr25519::Public::from_raw(account_bytes);
-
 
 		// Check if everything is good or not.
 		match signature.verify(data.as_slice(), &public_key) {
