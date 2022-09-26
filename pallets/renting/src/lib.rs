@@ -2,12 +2,10 @@
 
 use frame_support::{dispatch::{DispatchError, DispatchResult,fmt, result::Result}, ensure, log, pallet_prelude::*, traits::{Currency,ExistenceRequirement, Get, Randomness}};
 use frame_support::traits::UnixTime;
-use frame_system::{ensure_signed, pallet_prelude::*};
-use frame_system::offchain::Signer;
+use frame_system::{ensure_signed, pallet_prelude::*,offchain::Signer};
 use sp_core::sr25519;
-use sp_runtime::AnySignature;
-use sp_runtime::traits::{IdentifyAccount, Scale, Verify};
-pub use sp_std::{convert::Into, vec::Vec};
+use sp_runtime::{traits::{IdentifyAccount, Scale, Verify},AnySignature};
+pub use sp_std::{convert::Into, vec::Vec,str};
 pub use pallet::*;
 use pallet_nft_currency::NonFungibleToken;
 
@@ -19,55 +17,15 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+mod order;
+
+pub use order::Order;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::traits::tokens::Balance;
 	use sp_runtime::SaturatedConversion;
 	pub use super::*;
-
-	#[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-	pub enum Status {
-		None,
-		// if lender puts on for rent or borrower makes an offer
-		Created,
-		// if both side accepts offer
-		Started,
-		// if due_date renting is over
-		Terminated,
-	}
-
-	#[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-	pub enum OrderType {
-		None,
-		ForRent,
-		OfferRenting,
-	}
-
-	#[derive(Clone, Encode, Decode, PartialEq, TypeInfo)]
-	#[scale_info(skip_type_params(T))]
-	pub struct Order<T: Config> {
-		maker: T::AccountId,
-		taker: T::AccountId,
-		value: u64, // total fee that borrower must pay
-		token: Vec<u8>,
-		due_date: u64,
-		status: Status,
-		order_type: OrderType,
-	}
-
-
-	impl Default for Status {
-		fn default() -> Self {
-			Status::None
-		}
-	}
-
-	impl Default for OrderType {
-		fn default() -> Self {
-			OrderType::None
-		}
-	}
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -108,7 +66,7 @@ pub mod pallet {
 	#[pallet::getter(fn rental)]
 	// Hash Id -> Renting Info
 	pub(super) type Rental<T: Config> =
-	StorageMap<_, Blake2_128Concat, Vec<u8>, RentingInfo<T>, OptionQuery>;
+	StorageMap<_, Blake2_128Concat, Vec<u8>, Order<T>, OptionQuery>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
@@ -139,12 +97,15 @@ pub mod pallet {
 	#[pallet::call ]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(35_678_000)]
-		pub fn create_rental(origin: OriginFor<T>, lender: T::AccountId, borrower: T::AccountId,order_re: RentingInfo<T>,message:Vec<Vec<u8>>, signature: Vec<u8>) -> DispatchResult {
+		pub fn create_rental(origin: OriginFor<T>, lender: T::AccountId, borrower: T::AccountId,message:Vec<u8>, signature: Vec<u8>) -> DispatchResult {
 			let caller = ensure_signed(origin)?;
-			Self::verify_signature(message[0].clone(),signature.clone(),&lender)?;
-			let total_renting_days = Self::calculate_day_renting(order.due_date);
-
-			let _ = T::Currency::transfer(&borrower,&lender,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
+			Self::verify_signature(message.clone(),signature.clone(),&lender)?;
+			//let total_renting_days = Self::calculate_day_renting(order.due_date);
+			let data_order:Order<T> = bincode::deserialize(&message[..]).unwrap();
+			let data = str::from_utf8(&message).unwrap();
+			log::info!("message {:?}", data );
+			log::info!("data order {:?}", data_order.maker );
+			//let _ = T::Currency::transfer(&borrower,&lender,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
 			Ok(())
 		}
 	}

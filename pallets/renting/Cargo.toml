@@ -8,11 +8,12 @@ edition = "2021"
 license = "Unlicense"
 publish = false
 repository = "https://github.com/substrate-developer-hub/substrate-node-template/"
-
+resolver="2"
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+serde = { default-features = false,version = "1.0.119", features = ["derive"]}
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
 	"derive",
 ] }
@@ -24,6 +25,8 @@ sp-std = { default-features = false, version = "4.0.0", git="https://github.com/
 pallet-nft-currency = {default-features=false,version="4.0.0-dev", path="../nft_currency"}
 sp-runtime = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-core = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
+
+bincode = { version = "1.3.3", default-features = false }
 
 [dev-dependencies]
 sp-io = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
@@ -39,7 +42,7 @@ std = [
 	"frame-benchmarking/std",
 	"sp-std/std",
 	"sp-runtime/std",
-	"pallet-nft-currency/std"
+	"pallet-nft-currency/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
