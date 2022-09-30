@@ -1,0 +1,11 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@polkadot/api": "^9.4.2",
+    "@polkadot/api-contract": "^9.4.2",
+    "@polkadot/keyring": "^10.1.9",
+    "@polkadot/types": "^9.4.2",
+    "@polkadot/util": "^10.1.9",
+    "@polkadot/wasm-crypto": "^6.3.1"
+  }
+}
