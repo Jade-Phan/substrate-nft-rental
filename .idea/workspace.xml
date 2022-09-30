@@ -3,8 +3,27 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
+  <component name="CargoProjectFeatures">
+    <cargoProject file="$PROJECT_DIR$/Cargo.toml">
+      <package file="$PROJECT_DIR$/node">
+        <feature name="runtime-benchmarks" />
+      </package>
+      <package file="$PROJECT_DIR$/runtime">
+        <feature name="runtime-benchmarks" />
+        <feature name="std" />
+        <feature name="default" />
+      </package>
+      <package file="$PROJECT_DIR$/pallets/renting">
+        <feature name="runtime-benchmarks" />
+        <feature name="std" />
+        <feature name="default" />
+      </package>
+    </cargoProject>
+  </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
+    <cargoProject FILE="$PROJECT_DIR$/pallets/struct/Cargo/Cargo.toml" />
+    <cargoProject FILE="$PROJECT_DIR$/pallets/order/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3eba8e73-7973-4d08-b5ee-84b4b99d19d7" name="Changes" comment="[update] update">
@@ -103,6 +122,9 @@
       <workItem from="1664031478297" duration="2625000" />
       <workItem from="1664039320474" duration="1952000" />
       <workItem from="1664104559545" duration="17620000" />
+      <workItem from="1664421495755" duration="3864000" />
+      <workItem from="1664434112814" duration="7257000" />
+      <workItem from="1664506295068" duration="12039000" />
     </task>
     <task id="LOCAL-00001" summary="[update] pallet renting">
       <created>1661739706711</created>

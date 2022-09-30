@@ -8,10 +8,9 @@ use sp_runtime::{traits::{IdentifyAccount, Scale, Verify},AnySignature};
 pub use sp_std::{convert::Into, vec::Vec,str};
 pub use pallet::*;
 use pallet_nft_currency::NonFungibleToken;
-
 #[cfg(test)]
 mod mock;
-
+use serde_json_core;
 #[cfg(test)]
 mod tests;
 
@@ -66,7 +65,7 @@ pub mod pallet {
 	#[pallet::getter(fn rental)]
 	// Hash Id -> Renting Info
 	pub(super) type Rental<T: Config> =
-	StorageMap<_, Blake2_128Concat, Vec<u8>, Order<T>, OptionQuery>;
+	StorageMap<_, Blake2_128Concat, Vec<u8>, Order, OptionQuery>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
@@ -101,10 +100,11 @@ pub mod pallet {
 			let caller = ensure_signed(origin)?;
 			Self::verify_signature(message.clone(),signature.clone(),&lender)?;
 			//let total_renting_days = Self::calculate_day_renting(order.due_date);
-			let data_order:Order<T> = bincode::deserialize(&message[..]).unwrap();
+			//let data_order:Order<T> = bincode::deserialize(&message[..]).unwrap();
 			let data = str::from_utf8(&message).unwrap();
-			log::info!("message {:?}", data );
-			log::info!("data order {:?}", data_order.maker );
+			let res = serde_json_core::de::from_str(&data);
+			log::info!("message {:?}", data);
+			//log::info!("data order {:?}", data_order.maker );
 			//let _ = T::Currency::transfer(&borrower,&lender,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
 			Ok(())
 		}
