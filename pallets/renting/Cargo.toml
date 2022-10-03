@@ -24,7 +24,12 @@ sp-std = { default-features = false, version = "4.0.0", git="https://github.com/
 pallet-nft-currency = {default-features=false,version="4.0.0-dev", path="../nft_currency"}
 sp-runtime = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 sp-core = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
-serde-json-core = {version = "0.4.0"}
+serde_derive = { version = "1.0.145" }
+
+[dependencies.serde]
+default-features = false
+version = "1.0.145"
+features = ["derive"]
 
 [dev-dependencies]
 sp-io = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
@@ -41,7 +46,6 @@ std = [
 	"sp-std/std",
 	"sp-runtime/std",
 	"pallet-nft-currency/std",
-	"serde-json-core/std"
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]

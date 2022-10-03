@@ -7,10 +7,11 @@ use sp_core::sr25519;
 use sp_runtime::{traits::{IdentifyAccount, Scale, Verify},AnySignature};
 pub use sp_std::{convert::Into, vec::Vec,str};
 pub use pallet::*;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use pallet_nft_currency::NonFungibleToken;
 #[cfg(test)]
 mod mock;
-use serde_json_core;
 #[cfg(test)]
 mod tests;
 
@@ -100,10 +101,10 @@ pub mod pallet {
 			let caller = ensure_signed(origin)?;
 			Self::verify_signature(message.clone(),signature.clone(),&lender)?;
 			//let total_renting_days = Self::calculate_day_renting(order.due_date);
-			//let data_order:Order<T> = bincode::deserialize(&message[..]).unwrap();
-			let data = str::from_utf8(&message).unwrap();
-			let res = serde_json_core::de::from_str(&data);
-			log::info!("message {:?}", data);
+			let string_data = str::from_utf8(&message).unwrap();
+			//let data :Order = serde_json_core::from_str(string_data).unwrap();
+
+			//log::info!("message {:?}", data);
 			//log::info!("data order {:?}", data_order.maker );
 			//let _ = T::Currency::transfer(&borrower,&lender,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
 			Ok(())
