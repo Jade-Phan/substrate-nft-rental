@@ -1,30 +1,22 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{dispatch::{DispatchError, DispatchResult,fmt, result::Result}, ensure, log, pallet_prelude::*, traits::{Currency,ExistenceRequirement, Get, Randomness}};
+use frame_support::{dispatch::{DispatchError, DispatchResult,fmt, result::Result}, ensure, log, pallet_prelude::*, traits::{Currency, Randomness}};
 use frame_support::traits::UnixTime;
 use frame_system::{ensure_signed, pallet_prelude::*,offchain::Signer};
 use sp_core::sr25519;
 use sp_runtime::{traits::{IdentifyAccount, Scale, Verify},AnySignature};
 pub use sp_std::{convert::Into, vec::Vec,str};
 pub use pallet::*;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-use pallet_nft_currency::NonFungibleToken;
-#[cfg(test)]
-mod mock;
-#[cfg(test)]
-mod tests;
 
+use pallet_nft_currency::NonFungibleToken;
+use lite_json::json_parser::parse_json;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 mod order;
-
 pub use order::Order;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::traits::tokens::Balance;
-	use sp_runtime::SaturatedConversion;
 	pub use super::*;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -101,11 +93,11 @@ pub mod pallet {
 			let caller = ensure_signed(origin)?;
 			Self::verify_signature(message.clone(),signature.clone(),&lender)?;
 			//let total_renting_days = Self::calculate_day_renting(order.due_date);
-			let string_data = str::from_utf8(&message).unwrap();
-			//let data :Order = serde_json_core::from_str(string_data).unwrap();
-
-			//log::info!("message {:?}", data);
-			//log::info!("data order {:?}", data_order.maker );
+			let s = str::from_utf8(&message).unwrap();
+			let json_data = parse_json(s).unwrap();
+			//let order = Json::parse(s)
+			//log::info!("message {:?}", order);
+			log::info!("data order {:?}", json_data.as_string() );
 			//let _ = T::Currency::transfer(&borrower,&lender,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
 			Ok(())
 		}

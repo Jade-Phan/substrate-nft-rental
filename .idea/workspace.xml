@@ -8,12 +8,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="3eba8e73-7973-4d08-b5ee-84b4b99d19d7" name="Changes" comment="[update] update">
-      <change beforePath="$PROJECT_DIR$/.idea/substrate-nft-rental.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/substrate-nft-rental.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/pallets/renting/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/renting/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pallets/renting/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/renting/src/lib.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pallets/renting/src/order.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/renting/src/order.rs" afterDir="false" />
@@ -112,7 +108,9 @@
       <workItem from="1664506295068" duration="12225000" />
       <workItem from="1664762223053" duration="12874000" />
       <workItem from="1664783337477" duration="7833000" />
-      <workItem from="1664792167603" duration="968000" />
+      <workItem from="1664792167603" duration="984000" />
+      <workItem from="1664850095000" duration="17485000" />
+      <workItem from="1664878603330" duration="371000" />
     </task>
     <task id="LOCAL-00001" summary="[update] pallet renting">
       <created>1661739706711</created>
@@ -163,7 +161,14 @@
       <option name="project" value="LOCAL" />
       <updated>1664534226145</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="[update] update">
+      <created>1664793140693</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1664793140693</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
