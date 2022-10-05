@@ -7,15 +7,15 @@ use sp_std::vec::Vec;
 #[scale_info(skip_type_params(T))]
 pub struct Order {
 	//#[cfg_attr(feature = "std", serde(deserialize_with = "serde_bytes::deserialize"))]
-	maker: Vec<u8>,
+	pub(crate) maker: Vec<u8>,
 	//#[cfg_attr(feature = "std", serde(deserialize_with = "serde_bytes::deserialize"))]
-	taker: Vec<u8>,
+	pub(crate) taker: Vec<u8>,
 	//#[cfg_attr(feature = "std", serde(deserialize_with = "from_string"))]
-	fee: u64,
+	pub(crate) fee: u64,
 	//#[cfg_attr(feature = "std", serde(deserialize_with = "serde_bytes::deserialize"))]
-	token: Vec<u8>,
+	pub(crate) token: Vec<u8>,
 	//#[cfg_attr(feature = "std", serde(deserialize_with = "from_string"))]
-	due_date: u64,
+	pub(crate) due_date: u64,
 }
 
 // fn deserialize_maker<'de, D>(d: D) -> Result<Vec<u8>, D::Error>

@@ -1,15 +1,17 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
-use frame_support::{dispatch::{DispatchError, DispatchResult,fmt, result::Result}, ensure, log, pallet_prelude::*, traits::{Currency, Randomness}};
+  #![cfg_attr(not(feature = "std"), no_std)]
+use frame_support::{dispatch::{DispatchError, DispatchResult, fmt, result::Result}, ensure, log, pallet_prelude::*, traits::{Currency, Randomness}};
 use frame_support::traits::UnixTime;
 use frame_system::{ensure_signed, pallet_prelude::*,offchain::Signer};
 use sp_core::sr25519;
 use sp_runtime::{traits::{IdentifyAccount, Scale, Verify},AnySignature};
-pub use sp_std::{convert::Into, vec::Vec,str};
+pub use sp_std::{convert::Into,str};
+pub use sp_std::vec::Vec;
+pub use sp_std::vec;
 pub use pallet::*;
 
 use pallet_nft_currency::NonFungibleToken;
-use lite_json::json_parser::parse_json;
+use lite_json::NumberValue;
+use lite_json::{json_parser::parse_json,JsonObject,JsonValue};
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 mod order;
@@ -94,10 +96,9 @@ pub mod pallet {
 			Self::verify_signature(message.clone(),signature.clone(),&lender)?;
 			//let total_renting_days = Self::calculate_day_renting(order.due_date);
 			let s = str::from_utf8(&message).unwrap();
-			let json_data = parse_json(s).unwrap();
-			//let order = Json::parse(s)
-			//log::info!("message {:?}", order);
-			log::info!("data order {:?}", json_data.as_string() );
+			let json_data = parse_json(s).unwrap().to_object().unwrap();
+			let order_left = Self::parse_to_order(json_data);
+			 log::info!("data order {:?}", order_left);
 			//let _ = T::Currency::transfer(&borrower,&lender,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
 			Ok(())
 		}
@@ -133,6 +134,41 @@ impl<T: Config> Pallet<T> {
 	fn calculate_day_renting(due_date:u64) -> u64{
 		let part = due_date-T::Timestamp::now().as_secs();
 		part/24
+	}
+
+	fn parse_to_order(order_data : JsonObject) -> Order{
+		let mut order : Order = Order {
+			maker: vec![],
+			taker: vec![],
+			fee: 0,
+			token: vec![],
+			due_date: 0
+		};
+
+		for data in order_data.into_iter(){
+			let key = data.0;
+			let k =  key.iter().map(|c| *c as u8).collect::<Vec<_>>();
+
+			if k =="maker".as_bytes().to_vec() {
+				let value = data.1.to_string().unwrap().iter().map(|c| *c as u8).collect::<Vec<_>>();
+				order.maker = value;
+			} else if k == "taker".as_bytes().to_vec() {
+				let value = data.1.to_string().unwrap().iter().map(|c| *c as u8).collect::<Vec<_>>();
+				order.taker = value;
+			} else if k == "fee".as_bytes().to_vec(){
+				let value = data.1.to_number().unwrap().integer;
+				log::info!("fee {:?}", value);
+				order.fee = value;
+			} else if k == "token".as_bytes().to_vec() {
+				let value = data.1.to_string().unwrap().iter().map(|c| *c as u8).collect::<Vec<_>>();
+				order.token = value;
+			} else if k == "due_date".as_bytes().to_vec(){
+				let value = data.1.to_number().unwrap().integer;
+				log::info!("fee {:?}", value);
+				order.due_date = value;
+			}
+		}
+		order
 	}
 
 }
