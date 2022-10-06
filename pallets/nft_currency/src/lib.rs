@@ -8,8 +8,6 @@ pub use pallet::*;
 pub mod nft;
 use frame_support::{dispatch::{result::Result, DispatchError, DispatchResult}, ensure, traits::{Get,Randomness}};
 use frame_support::{pallet_prelude::{StorageMap,StorageValue}};
-use frame_support::traits::Currency;
-use frame_support::traits::EnsureOrigin;
 pub use nft::NonFungibleToken;
 use frame_system::{ensure_signed};
 
@@ -26,7 +24,7 @@ pub use sp_std::{vec::Vec, convert::Into};
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::pallet_prelude::*;
-	use frame_support::traits::{Currency, Randomness};
+	use frame_support::traits::Randomness;
 	use frame_system::pallet_prelude::*;
 	pub use super::*;
 	/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -105,8 +103,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(33_963_000 + T::DbWeight::get().reads_writes(4, 3))]
-		pub fn mint_to(origin: OriginFor<T>, to: T::AccountId) -> DispatchResult {
-			let who = ensure_signed(origin)?;
+		pub fn mint_to(_origin: OriginFor<T>, to: T::AccountId) -> DispatchResult {
 			let token_id = <Self as NonFungibleToken<_>>::mint(to.clone())?;
 			Self::deposit_event(Event::Mint(to,token_id));
 			Ok(())
@@ -116,7 +113,7 @@ pub mod pallet {
 		pub fn transfer_token(origin: OriginFor<T>, to: T::AccountId, token_id:Vec<u8>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			ensure!(who == Self::owner_of(token_id.clone()).unwrap(),Error::<T>::NotOwner);
-			<Self as NonFungibleToken<_>>::transfer(who.clone(), to.clone(), token_id.clone());
+			<Self as NonFungibleToken<_>>::transfer(who.clone(), to.clone(), token_id.clone()).expect("Cannot transfer token");
 			Self::deposit_event(Event::Transfer(who,to,token_id));
 			Ok(())
 		}
@@ -137,7 +134,6 @@ pub mod pallet {
 		#[pallet::weight(38_030_000 + T::DbWeight::get().reads_writes(2,1))]
 		pub fn approve(origin: OriginFor<T>, to: T::AccountId, token_id:Vec<u8>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			let account = (who.clone(),to.clone());
 			ensure!(who == Self::owner_of(token_id.clone()).unwrap(),Error::<T>::NotOwner);
 			<Self as NonFungibleToken<_>>::approve(who.clone(), to.clone(), token_id.clone())?;
 			Self::deposit_event(Event::Approve(who,to,token_id));
@@ -211,13 +207,13 @@ impl<T: Config> NonFungibleToken<T::AccountId> for Pallet<T>{
 		ListOwned::<T>::mutate(to,|list_token| {
 			list_token.push(token_id.clone());
 		});
-		ListOwned::<T>::mutate(from,|list_token| {
+		ListOwned::<T>::mutate(from, |list_token| {
 			if let Some(ind) = list_token.iter().position(|id| *id == token_id) {
 				list_token.swap_remove(ind);
 				return Ok(())
 			}
 			Err(())
-		});
+		}).expect("Error in ListOwned");
 		Ok(())
 	}
 
