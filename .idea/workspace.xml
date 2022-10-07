@@ -7,17 +7,10 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3eba8e73-7973-4d08-b5ee-84b4b99d19d7" name="Changes" comment="[update] a">
-      <change beforePath="$PROJECT_DIR$/.idea/substrate-nft-rental.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/substrate-nft-rental.iml" afterDir="false" />
+    <list default="true" id="3eba8e73-7973-4d08-b5ee-84b4b99d19d7" name="Changes" comment="[update] transfer assets">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pallets/nft_currency/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/nft_currency/src/lib.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pallets/order/Cargo.toml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pallets/order/src/lib.rs" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/pallets/renting/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/renting/src/lib.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pallets/renting/src/order.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/renting/src/order.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/runtime/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/runtime/src/lib.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -120,6 +113,8 @@
       <workItem from="1664951518956" duration="10577000" />
       <workItem from="1665022577603" duration="17857000" />
       <workItem from="1665047940179" duration="2327000" />
+      <workItem from="1665052555259" duration="58000" />
+      <workItem from="1665107786376" duration="17277000" />
     </task>
     <task id="LOCAL-00001" summary="[update] pallet renting">
       <created>1661739706711</created>
@@ -191,7 +186,14 @@
       <option name="project" value="LOCAL" />
       <updated>1664965768347</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="[update] transfer assets">
+      <created>1665052602643</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1665052602643</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -211,7 +213,9 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="[update] pallet renting" />
     <MESSAGE value="[update] update" />
-    <option name="LAST_COMMIT_MESSAGE" value="[update] update" />
+    <MESSAGE value="[update] transfer asset" />
+    <MESSAGE value="[update] transfer assets" />
+    <option name="LAST_COMMIT_MESSAGE" value="[update] transfer assets" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

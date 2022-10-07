@@ -6,9 +6,9 @@ use sp_std::vec::Vec;
 #[scale_info(skip_type_params(T))]
 pub struct Order {
 	//#[cfg_attr(feature = "std", serde(deserialize_with = "serde_bytes::deserialize"))]
-	pub(crate) maker: Vec<u8>,
+	pub(crate) lender: Vec<u8>,
 	//#[cfg_attr(feature = "std", serde(deserialize_with = "serde_bytes::deserialize"))]
-	pub(crate) taker: Vec<u8>,
+	pub(crate) borrower: Vec<u8>,
 	//#[cfg_attr(feature = "std", serde(deserialize_with = "from_string"))]
 	pub(crate) fee: u64,
 	//#[cfg_attr(feature = "std", serde(deserialize_with = "serde_bytes::deserialize"))]

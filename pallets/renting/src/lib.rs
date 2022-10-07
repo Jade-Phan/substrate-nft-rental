@@ -1,18 +1,20 @@
   #![cfg_attr(not(feature = "std"), no_std)]
 use frame_support::{dispatch::{DispatchError, DispatchResult, result::Result}, ensure, log, pallet_prelude::*, traits::{Currency, Randomness}};
-use frame_support::traits::UnixTime;
+use frame_support::traits::{ExistenceRequirement, UnixTime};
 use frame_system::{ensure_signed, pallet_prelude::*};
 use sp_core::sr25519;
   use scale_info::prelude::string::String;
-use sp_runtime::{traits::{IdentifyAccount, Verify},AnySignature};
+use sp_runtime::{traits::{IdentifyAccount, Verify}, AnySignature, SaturatedConversion};
 pub use sp_std::{convert::Into,str};
 pub use sp_std::vec::Vec;
 pub use sp_std::vec;
 pub use pallet::*;
 use pallet_nft_currency::NonFungibleToken;
 use lite_json::{json_parser::parse_json};
+  use sp_core::crypto::AccountId32;
+  use sp_runtime::traits::AccountIdConversion;
 
-#[cfg(feature = "runtime-benchmarks")]
+  #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 mod order;
 pub use order::Order;
@@ -77,12 +79,14 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T>{
 		NotMatchToken,
-		NotMatchMaker,
+		NotMatchLender,
+		NotMatchBorrower,
 		TimeOver,
 		NotOwner,
 		NotEnoughFee,
 		NoneExist,
-		SignatureVerifyError,
+		SignatureVerifyError1,
+		SignatureVerifyError2
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -93,20 +97,17 @@ pub mod pallet {
 		#[pallet::weight(35_678_000)]
 		pub fn create_rental(origin: OriginFor<T>, lender: T::AccountId, borrower: T::AccountId,message_left:Vec<u8>, signature_left: Vec<u8>,message_right:Vec<u8>, signature_right: Vec<u8> ) -> DispatchResult {
 			let caller = ensure_signed(origin)?;
-
-			if caller == lender  {
+			if caller == lender {
 				Self::verify_signature(message_right.clone(),signature_right.clone(),&borrower)?;
 			} else if caller == borrower {
 				Self::verify_signature(message_left.clone(), signature_left.clone(), &lender)?;
 			}
 			let order_left = Self::parse_to_order(&message_left);
-			log::info!("data order {:?}", order_left);
 			let order_right = Self::parse_to_order(&message_right);
-			log::info!("data order {:?}", order_right);
 			let fullfilled_order = Self::match_order(order_left, order_right).unwrap();
 			let rent_fee = fullfilled_order.fee;
 			Self::transfer_asset(fullfilled_order);
-			//let _ = T::Currency::transfer(&borrower,&lender,rent_fee.saturated_into(),ExistenceRequirement::KeepAlive);
+
 			Ok(())
 		}
 	}
@@ -124,7 +125,7 @@ impl<T: Config> Pallet<T> {
 	fn verify_signature(data: Vec<u8>,signature: Vec<u8>,who: &T::AccountId) -> Result<(), DispatchError> {
 		// sr25519 always expects a 64 byte signature.
 		let signature: AnySignature = sr25519::Signature::from_slice(signature.as_ref())
-			.ok_or(Error::<T>::SignatureVerifyError)?
+			.ok_or(Error::<T>::SignatureVerifyError1)?
 			.into();
 
 		// In Polkadot, the AccountId is always the same as the 32 byte public key.
@@ -134,7 +135,7 @@ impl<T: Config> Pallet<T> {
 		// Check if everything is good or not.
 		match signature.verify(data.as_slice(), &public_key) {
 			true => Ok(()),
-			false => Err(Error::<T>::SignatureVerifyError)?,
+			false => Err(Error::<T>::SignatureVerifyError2)?,
 		}
 	}
 
@@ -148,8 +149,8 @@ impl<T: Config> Pallet<T> {
 		let data = str::from_utf8(message).unwrap();
 		let order_data = parse_json(data).unwrap().to_object().unwrap();
 		let mut order : Order = Order {
-			maker: vec![],
-			taker: vec![],
+			lender: vec![],
+			borrower: vec![],
 			fee: 0,
 			token: vec![],
 			due_date: 0
@@ -159,12 +160,12 @@ impl<T: Config> Pallet<T> {
 			let key = data.0;
 			let k =  key.iter().map(|c| *c as u8).collect::<Vec<_>>();
 
-			if k =="maker".as_bytes().to_vec() {
+			if k =="lender".as_bytes().to_vec() {
 				let value = data.1.to_string().unwrap().iter().map(|c| *c as u8).collect::<Vec<_>>();
-				order.maker = value;
-			} else if k == "taker".as_bytes().to_vec() {
+				order.lender = value;
+			} else if k == "borrower".as_bytes().to_vec() {
 				let value = data.1.to_string().unwrap().iter().map(|c| *c as u8).collect::<Vec<_>>();
-				order.taker = value;
+				order.borrower = value;
 			} else if k == "fee".as_bytes().to_vec(){
 				let value = data.1.to_number().unwrap().integer;
 				log::info!("fee {:?}", value);
@@ -183,7 +184,7 @@ impl<T: Config> Pallet<T> {
 
 	fn match_order(order_left: Order, mut order_right: Order) -> Result<Order, DispatchError> {
 		ensure!(order_left.token == order_right.token, Error::<T>::NotMatchToken);
-		ensure!(order_left.maker == order_right.maker, Error::<T>::NotMatchMaker);
+		ensure!(order_left.lender == order_right.lender, Error::<T>::NotMatchLender);
 		ensure!(order_left.due_date >= order_right.due_date, Error::<T>::TimeOver);
 		let total_renting_days = Self::calculate_day_renting(order_right.due_date);
 		let total_fee = order_left.fee * total_renting_days;
@@ -194,8 +195,21 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn transfer_asset(order:Order) {
-		let token_id = String::from_utf8(order.token).unwrap();
-		log::info!("Transfer asset: {}", token_id);
+		let lender = Self::convert_vec_to_accountid(order.lender);
+		let borrower = Self::convert_vec_to_accountid(order.borrower);
+		let token_id = String::from_utf8(order.token).unwrap().as_bytes().to_vec();
+		let _ = T::TokenNFT::transfer(lender.clone(), borrower.clone(), token_id);
+		let _ = T::Currency::transfer(&lender,&borrower,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
+	}
+
+	fn convert_vec_to_accountid(account_vec: Vec<u8>)-> T::AccountId{
+		let mut array = [0; 32];
+		let bytes = &account_vec[..array.len()];
+		array.copy_from_slice(bytes);
+		let account32: AccountId32 = array.into();
+		let mut to32 = AccountId32::as_ref(&account32);
+		let to_address = T::AccountId::decode(&mut to32).unwrap_or_default();
+		to_address
 	}
 }
 
@@ -210,3 +224,4 @@ fn account_to_bytes<AccountId>(account: &AccountId) -> Result<[u8; 32], Dispatch
 	bytes.copy_from_slice(&account_vec);
 	Ok(bytes)
 }
+
