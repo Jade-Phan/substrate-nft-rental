@@ -1,9 +1,12 @@
   #![cfg_attr(not(feature = "std"), no_std)]
-use frame_support::{dispatch::{DispatchError, DispatchResult, result::Result}, ensure, log, pallet_prelude::*, traits::{Currency, Randomness}};
+
+  use sp_std::fmt::{Display,Write};
+  use frame_support::{dispatch::{DispatchError, DispatchResult, result::Result}, ensure, log, pallet_prelude::*, traits::{Currency, Randomness}};
 use frame_support::traits::{ExistenceRequirement, UnixTime};
 use frame_system::{ensure_signed, pallet_prelude::*};
 use sp_core::sr25519;
-  use scale_info::prelude::string::String;
+  use sp_core::crypto::Ss58Codec;
+  use scale_info::prelude::{string::String,format};
 use sp_runtime::{traits::{IdentifyAccount, Verify}, AnySignature, SaturatedConversion};
 pub use sp_std::{convert::Into,str};
 pub use sp_std::vec::Vec;
@@ -11,8 +14,8 @@ pub use sp_std::vec;
 pub use pallet::*;
 use pallet_nft_currency::NonFungibleToken;
 use lite_json::{json_parser::parse_json};
-  use sp_core::crypto::AccountId32;
-  use sp_runtime::traits::AccountIdConversion;
+  use sp_core::crypto::{AccountId32};
+  use sp_runtime::traits::{AccountIdConversion, MaybeDisplay};
 
   #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -86,7 +89,8 @@ pub mod pallet {
 		NotEnoughFee,
 		NoneExist,
 		SignatureVerifyError1,
-		SignatureVerifyError2
+		SignatureVerifyError2,
+		NotCaller
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -101,12 +105,17 @@ pub mod pallet {
 				Self::verify_signature(message_right.clone(),signature_right.clone(),&borrower)?;
 			} else if caller == borrower {
 				Self::verify_signature(message_left.clone(), signature_left.clone(), &lender)?;
+			} else {
+				return Err(DispatchError::CannotLookup)
 			}
-			let order_left = Self::parse_to_order(&message_left);
-			let order_right = Self::parse_to_order(&message_right);
-			let fullfilled_order = Self::match_order(order_left, order_right).unwrap();
-			let rent_fee = fullfilled_order.fee;
-			Self::transfer_asset(fullfilled_order);
+			let lender_bytes = account_to_bytes(&lender).unwrap();
+			let borrower_bytes = account_to_bytes(&borrower).unwrap();
+			let order_left = Self::parse_to_order(lender_bytes.clone(),[0u8;32],&message_left);
+			let order_right = Self::parse_to_order(lender_bytes.clone(),borrower_bytes.clone(),&message_right);
+			let fulfilled_order = Self::match_order(order_left.unwrap(),order_right.unwrap()).unwrap();
+
+			log::info!("fulfilled_order {:?}",fulfilled_order);
+			Self::transfer_asset(fulfilled_order);
 
 			Ok(())
 		}
@@ -130,6 +139,7 @@ impl<T: Config> Pallet<T> {
 
 		// In Polkadot, the AccountId is always the same as the 32 byte public key.
 		let account_bytes: [u8; 32] = account_to_bytes(who)?;
+		log::info!("account_bytes {:?}", account_bytes);
 		let public_key = sr25519::Public::from_raw(account_bytes);
 
 		// Check if everything is good or not.
@@ -145,12 +155,12 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Parse the json object to Order struct
-	fn parse_to_order(message: &Vec<u8>) -> Order{
+	fn parse_to_order(lender:[u8;32],borrower:[u8;32],message: &Vec<u8>) -> Result<Order, DispatchError> {
 		let data = str::from_utf8(message).unwrap();
 		let order_data = parse_json(data).unwrap().to_object().unwrap();
 		let mut order : Order = Order {
-			lender: vec![],
-			borrower: vec![],
+			lender : [0u8;32],
+			borrower : [0u8;32],
 			fee: 0,
 			token: vec![],
 			due_date: 0
@@ -160,35 +170,38 @@ impl<T: Config> Pallet<T> {
 			let key = data.0;
 			let k =  key.iter().map(|c| *c as u8).collect::<Vec<_>>();
 
-			if k =="lender".as_bytes().to_vec() {
+			if k == "lender".as_bytes().to_vec(){
 				let value = data.1.to_string().unwrap().iter().map(|c| *c as u8).collect::<Vec<_>>();
-				order.lender = value;
-			} else if k == "borrower".as_bytes().to_vec() {
-				let value = data.1.to_string().unwrap().iter().map(|c| *c as u8).collect::<Vec<_>>();
-				order.borrower = value;
+				let account = String::from_utf8(value.clone()).unwrap();
+
+				let temp = Self::convert_to_accountid(lender.clone());
+				log::info!("temp & account {:?} {:?} ",temp,account);
+				ensure!(account == temp, Error::<T>::NotMatchLender);
+				order.lender = lender;
+
+			} else if k == "borrower".as_bytes().to_vec(){
+				order.borrower = borrower;
 			} else if k == "fee".as_bytes().to_vec(){
 				let value = data.1.to_number().unwrap().integer;
-				log::info!("fee {:?}", value);
 				order.fee = value;
 			} else if k == "token".as_bytes().to_vec() {
 				let value = data.1.to_string().unwrap().iter().map(|c| *c as u8).collect::<Vec<_>>();
 				order.token = value;
 			} else if k == "due_date".as_bytes().to_vec(){
 				let value = data.1.to_number().unwrap().integer;
-				log::info!("fee {:?}", value);
 				order.due_date = value;
 			}
 		}
-		order
+		Ok(order)
 	}
 
 	fn match_order(order_left: Order, mut order_right: Order) -> Result<Order, DispatchError> {
 		ensure!(order_left.token == order_right.token, Error::<T>::NotMatchToken);
 		ensure!(order_left.lender == order_right.lender, Error::<T>::NotMatchLender);
 		ensure!(order_left.due_date >= order_right.due_date, Error::<T>::TimeOver);
+		ensure!(order_left.fee <= order_right.fee, Error::<T>::NotEnoughFee);
 		let total_renting_days = Self::calculate_day_renting(order_right.due_date);
-		let total_fee = order_left.fee * total_renting_days;
-		log::info!("Total fee: {}", total_fee);
+		let total_fee = order_right.fee * total_renting_days;
 		order_right.fee = total_fee;
 
 		Ok(order_right)
@@ -202,26 +215,41 @@ impl<T: Config> Pallet<T> {
 		let _ = T::Currency::transfer(&lender,&borrower,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
 	}
 
-	fn convert_vec_to_accountid(account_vec: Vec<u8>)-> T::AccountId{
-		let mut array = [0; 32];
-		let bytes = &account_vec[..array.len()];
-		array.copy_from_slice(bytes);
-		let account32: AccountId32 = array.into();
+	fn convert_to_accountid(bytes: [u8;32])-> String{
+		let account32: AccountId32 = bytes.into();
 		let mut to32 = AccountId32::as_ref(&account32);
-		let to_address = T::AccountId::decode(&mut to32).unwrap_or_default();
-		to_address
+		let to_address = T::AccountId::decode(&mut to32).unwrap();
+		log::info!("convert account id {:?}", to_address);
+		let mut res = String::new();
+		write!(&mut res, "{:?}",to_address);
+
+		res
 	}
+
+	fn convert_vec_to_accountid(bytes: [u8;32])-> T::AccountId{
+		let account32: AccountId32 = bytes.into();
+		let mut to32 = AccountId32::as_ref(&account32);
+		let mut f:T::AccountId = ();
+		write!(f, "{}", to32.to_ss58check());
+		let to_address = T::AccountId::decode(&mut to32).unwrap();
+		log::info!("convert account id {:?}", to_address);
+		f
+	}
+
+
 }
 
 // This function converts a 32 byte AccountId to its byte-array equivalent form.
 fn account_to_bytes<AccountId>(account: &AccountId) -> Result<[u8; 32], DispatchError>
 	where
-		AccountId: Encode,
+		AccountId: Encode+?Sized,
 {
 	let account_vec = account.encode();
+	log::info!("account_to_bytes {:?}", account_vec);
 	ensure!(account_vec.len() == 32, "AccountId must be 32 bytes.");
 	let mut bytes = [0u8; 32];
 	bytes.copy_from_slice(&account_vec);
+	log::info!("bytes when verify {:?}", bytes.clone());
 	Ok(bytes)
 }
 

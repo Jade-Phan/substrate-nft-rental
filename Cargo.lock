@@ -4106,6 +4106,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "getrandom 0.2.7",
+ "hex-literal",
  "lite-json",
  "pallet-nft-currency",
  "parity-scale-codec",

@@ -6,7 +6,7 @@ use codec::Encode;
 /// <https://docs.substrate.io/v3/runtime/frame>
 pub use pallet::*;
 pub mod nft;
-use frame_support::{dispatch::{result::Result, DispatchError, DispatchResult}, ensure, traits::{Get,Randomness}};
+use frame_support::{dispatch::{result::Result, DispatchError, DispatchResult}, ensure, log, traits::{Get, Randomness}};
 use frame_support::{pallet_prelude::{StorageMap,StorageValue}};
 pub use nft::NonFungibleToken;
 use frame_system::{ensure_signed};
@@ -202,6 +202,7 @@ impl<T: Config> NonFungibleToken<T::AccountId> for Pallet<T>{
 	}
 
 	fn transfer(from: T::AccountId, to: T::AccountId, token_id: Vec<u8>) -> DispatchResult {
+		log::info!("from: {:?} to: {:?}", from, to);
 		ensure!(from == Self::owner_of_token(token_id.clone()), Error::<T>::NotOwner);
 		OwnerOf::<T>::mutate(token_id.clone(), |owner| *owner = Some(to.clone()));
 		ListOwned::<T>::mutate(to,|list_token| {

@@ -7,8 +7,11 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3eba8e73-7973-4d08-b5ee-84b4b99d19d7" name="Changes" comment="[update] transfer assets">
+    <list default="true" id="c21b96d9-399a-42ab-96cf-db074619d26a" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pallets/nft_currency/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/nft_currency/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pallets/renting/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/renting/Cargo.toml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pallets/renting/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/renting/src/lib.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pallets/renting/src/order.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/renting/src/order.rs" afterDir="false" />
     </list>
