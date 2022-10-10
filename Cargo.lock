@@ -4102,14 +4102,15 @@ dependencies = [
 name = "pallet-renting"
 version = "4.0.0-dev"
 dependencies = [
+ "bs58",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "getrandom 0.2.7",
- "hex-literal",
  "lite-json",
  "pallet-nft-currency",
  "parity-scale-codec",
+ "rustc-hex",
  "scale-info",
  "sp-core",
  "sp-io",

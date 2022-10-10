@@ -26,7 +26,8 @@ sp-runtime = { default-features = false, version = "6.0.0", git = "https://githu
 sp-core = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 getrandom = { version = "0.2", features = ["js"] }
 lite-json = { version = "0.2.0", default-features = false, defaults = ["no_std"] }
-hex-literal = { version = "0.3.4", default-features = false}
+rustc-hex = { version="2.1.0", default-features = false }
+bs58 = { version = "0.4.0", default-features = false }
 [dev-dependencies]
 sp-io = { default-features = false, version = "6.0.0", git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.26" }
 
@@ -42,6 +43,10 @@ std = [
 	"sp-std/std",
 	"sp-runtime/std",
 	"pallet-nft-currency/std",
+	"lite-json/std",
+	'rustc-hex/std',
+	'bs58/std',
+
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]

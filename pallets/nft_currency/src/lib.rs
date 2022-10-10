@@ -180,7 +180,10 @@ impl<T: Config> NonFungibleToken<T::AccountId> for Pallet<T>{
 	}
 
 	fn owner_of_token(token_id: Vec<u8>) -> T::AccountId {
-		Self::owner_of(token_id).unwrap()
+		log::info!("token_id: {:?}", token_id);
+		let account = OwnerOf::<T>::get(token_id.clone()).unwrap();
+		log::info!("account: {:?}", account);
+		account
 	}
 
 	fn mint(owner: T::AccountId) -> Result<Vec<u8>, DispatchError>  {
@@ -202,7 +205,7 @@ impl<T: Config> NonFungibleToken<T::AccountId> for Pallet<T>{
 	}
 
 	fn transfer(from: T::AccountId, to: T::AccountId, token_id: Vec<u8>) -> DispatchResult {
-		log::info!("from: {:?} to: {:?}", from, to);
+		log::info!("from: {:?} to: {:?} , token {:?}", from, to, token_id.clone());
 		ensure!(from == Self::owner_of_token(token_id.clone()), Error::<T>::NotOwner);
 		OwnerOf::<T>::mutate(token_id.clone(), |owner| *owner = Some(to.clone()));
 		ListOwned::<T>::mutate(to,|list_token| {
