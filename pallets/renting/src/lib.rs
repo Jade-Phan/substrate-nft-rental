@@ -1,4 +1,6 @@
   #![cfg_attr(not(feature = "std"), no_std)]
+
+  use std::io::Bytes;
   use sp_std::fmt::Write;
   use frame_support::{dispatch::{DispatchError, DispatchResult, result::Result}, ensure, log, pallet_prelude::*, traits::{Currency, Randomness}};
   use frame_support::traits::{UnixTime,ExistenceRequirement};
@@ -11,10 +13,12 @@
   pub use sp_std::vec;
   pub use pallet::*;
   use pallet_nft_currency::NonFungibleToken;
-  use lite_json::{json_parser::parse_json};
+  use lite_json::{json_parser::parse_json,JsonValue,JsonObject};
   use bs58;
 mod order;
-pub use order::Order;
+  mod convert;
+use convert::*;
+  pub use order::Order;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -188,14 +192,14 @@ impl<T: Config> Pallet<T> {
 
 			if k == "lender".as_bytes().to_vec(){
 				let value = data.1.to_string().unwrap().iter().map(|c| *c as u8).collect::<Vec<_>>();
-				let hex_account = Self::convert_string_to_accountid(&String::from_utf8(value.clone()).unwrap());
-				let account = Self::convert_bytes_to_accountid(lender.clone());
+				let hex_account = convert_string_to_accountid(&String::from_utf8(value.clone()).unwrap());
+				let account = convert_bytes_to_accountid(lender.clone());
 				ensure!(hex_account == account, Error::<T>::NotMatchLender);
 				order.lender = lender;
 			} else if k == "borrower".as_bytes().to_vec(){
 				let value = data.1.to_string().unwrap().iter().map(|c| *c as u8).collect::<Vec<_>>();
-				let hex_account = Self::convert_string_to_accountid(&String::from_utf8(value.clone()).unwrap());
-				let account = Self::convert_bytes_to_accountid(borrower.clone());
+				let hex_account = convert_string_to_accountid(&String::from_utf8(value.clone()).unwrap());
+				let account = convert_bytes_to_accountid(borrower.clone());
 				log::info!("borrower {:?} {:?}", account, hex_account);
 				ensure!(hex_account == account, Error::<T>::NotMatchBorrower);
 				order.borrower = borrower;
@@ -203,8 +207,9 @@ impl<T: Config> Pallet<T> {
 				let value = data.1.to_number().unwrap().integer;
 				order.fee = value;
 			} else if k == "token".as_bytes().to_vec() {
-				let value = data.1.to_string().unwrap().iter().map(|c| *c as u8).collect::<Vec<_>>();
-				order.token = value;
+				let value = data.1.to_string().unwrap();
+				log::info!("Token: {:?}", token);
+				order.token = Vec::from(token);
 			} else if k == "due_date".as_bytes().to_vec(){
 				let value = data.1.to_number().unwrap().integer;
 				ensure!(value >= T::Timestamp::now().as_secs(), Error::<T>::TimeOver);
@@ -228,48 +233,38 @@ impl<T: Config> Pallet<T> {
 
 	fn transfer_asset(lender:&T::AccountId, borrower:&T::AccountId,order:Order) {
 		let token_id = String::from_utf8(order.token).unwrap();
-		//let _ = T::TokenNFT::transfer(lender.clone(), borrower.clone(), token_id);
+		let _ = T::TokenNFT::transfer(lender.clone(), borrower.clone(), Vec::from(token_id.encode()));
 		let _ = T::Currency::transfer(&lender,&borrower,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
 	}
 
 
-	fn convert_bytes_to_hex(bytes: [u8;32])-> String{
-		let to_address = Self::convert_bytes_to_accountid(bytes);
-		let mut res = String::new();
-		write!(&mut res, "{:?}",to_address);
-		res
-	}
-
-	fn convert_bytes_to_accountid(bytes: [u8;32])-> T::AccountId{
-		let account32: AccountId32 = bytes.into();
-		let mut to32:&[u8] = AccountId32::as_ref(&account32);
-		let to_address = T::AccountId::decode(&mut to32).unwrap();
-		to_address
-	}
-
-	fn convert_string_to_accountid(account_str: &str)-> T::AccountId{
-		let mut output = vec![0xFF; 35];
-		bs58::decode(account_str).into(&mut output).unwrap();
-		let cut_address_vec:Vec<u8> = output.drain(1..33).collect();
-		let mut array = [0; 32];
-		let bytes = &cut_address_vec[..array.len()];
-		array.copy_from_slice(bytes);
-		let account32: AccountId32 = array.into();
-		let mut to32 = AccountId32::as_ref(&account32);
-		let to_address : T::AccountId = T::AccountId::decode(&mut to32).unwrap();
-		to_address
-	}
+	// fn convert_bytes_to_hex(bytes: [u8;32])-> String{
+	// 	let to_address = Self::convert_bytes_to_accountid(bytes);
+	// 	let mut res = String::new();
+	// 	write!(&mut res, "{:?}",to_address);
+	// 	res
+	// }
+	//
+	// fn convert_bytes_to_accountid(bytes: [u8;32])-> T::AccountId{
+	// 	let account32: AccountId32 = bytes.into();
+	// 	let mut to32:&[u8] = AccountId32::as_ref(&account32);
+	// 	let to_address = T::AccountId::decode(&mut to32).unwrap();
+	// 	to_address
+	// }
+	//
+	// fn convert_string_to_accountid(account_str: &str)-> T::AccountId{
+	// 	let mut output = vec![0xFF; 35];
+	// 	bs58::decode(account_str).into(&mut output).unwrap();
+	// 	let cut_address_vec:Vec<u8> = output.drain(1..33).collect();
+	// 	let mut array = [0; 32];
+	// 	let bytes = &cut_address_vec[..array.len()];
+	// 	array.copy_from_slice(bytes);
+	// 	let account32: AccountId32 = array.into();
+	// 	let mut to32 = AccountId32::as_ref(&account32);
+	// 	let to_address : T::AccountId = T::AccountId::decode(&mut to32).unwrap();
+	// 	to_address
+	// }
 }
 
-// This function converts a 32 byte AccountId to its byte-array equivalent form.
-fn account_to_bytes<AccountId>(account: &AccountId) -> Result<[u8; 32], DispatchError>
-	where
-		AccountId: Encode+?Sized,
-{
-	let account_vec = account.encode();
-	ensure!(account_vec.len() == 32, "AccountId must be 32 bytes.");
-	let mut bytes = [0u8; 32];
-	bytes.copy_from_slice(&account_vec);
-	Ok(bytes)
-}
+
 
