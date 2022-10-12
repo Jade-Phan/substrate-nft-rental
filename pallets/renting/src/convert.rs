@@ -2,9 +2,12 @@ use codec::{Decode, Encode};
 use frame_support::ensure;
 use sp_core::crypto::AccountId32;
 use sp_runtime::DispatchError;
+pub use sp_std::{vec::{Vec},vec,str};
+use scale_info::prelude::string::String;
+use crate::log;
 
 // This function converts a 32 byte AccountId to its byte-array equivalent form.
-fn account_to_bytes<AccountId>(account: &AccountId) -> Result<[u8; 32], DispatchError>
+pub fn account_to_bytes<AccountId>(account: &AccountId) -> Result<[u8; 32], DispatchError>
 	where
 		AccountId: Encode+?Sized,
 {
@@ -15,24 +18,30 @@ fn account_to_bytes<AccountId>(account: &AccountId) -> Result<[u8; 32], Dispatch
 	Ok(bytes)
 }
 
-fn hex_string_to_vec(str:String) -> Vec<u8> {
+pub fn hex_string_to_vec(str:String) -> Vec<u8> {
 	let hex_string =str.replace("0x", "");
-
-	let split_string:Vec<&str> = hex_string.splitn(32,"").collect();
+	log::info!("Hex string {:?}", hex_string);
+	let split_string = hex_string.as_bytes()
+		.chunks(2)
+		.map(str::from_utf8)
+		.collect::<Result<Vec<&str>, _>>()
+		.unwrap();
 	let mut bytes :Vec<u8> = Vec::new();
 	for part in split_string.into_iter() {
 		bytes.push(hex_to_deci(part));
 	}
+	log::info!("After hex string {:?}", bytes);
 	bytes
 }
 
 fn hex_to_deci(str:&str) -> u8 {
+	log::info!("part string {:?}", str);
 	let mut deci: u8 = 0;
 	let mut i: u32 = 0;
 	let hex_vec: Vec<char> = str.trim_end().chars().rev().collect();
 
 	for hex in hex_vec {
-		let temp: i32 = match hex {
+		let temp: u8 = match hex {
 			'0'=>0,
 			'1'=>1,
 			'2'=>2,
@@ -43,30 +52,32 @@ fn hex_to_deci(str:&str) -> u8 {
 			'7'=>7,
 			'8'=>8,
 			'9'=>9,
-			'A'=>10,
-			'B'=>11,
-			'C'=>12,
-			'D'=>13,
-			'E'=>14,
-			'F'=>15,
-			_=>-1
+			'a'=>10,
+			'b'=>11,
+			'c'=>12,
+			'd'=>13,
+			'e'=>14,
+			'f'=>15,
+			_=> 16
 		};
-
-		deci += temp * i32::pow(16, i);
+		if temp == 16 {
+			return u8::MAX;
+		}
+		deci += temp * u8::pow(16, i);
 		i += 1;
 	}
 
 	return deci;
 }
 
-fn convert_bytes_to_hex(bytes: [u8;32])-> String{
-	let to_address = convert_bytes_to_accountid(bytes);
-	let mut res = String::new();
-	write!(&mut res, "{:?}",to_address);
-	res
-}
+// pub fn convert_bytes_to_hex(bytes: [u8;32])-> String{
+// 	let to_address = convert_bytes_to_accountid(bytes);
+// 	let mut res = String::new();
+// 	write!(&mut res, "{:?}",to_address);
+// 	res
+// }
 
-fn convert_bytes_to_accountid<AccountId>(bytes: [u8;32])-> AccountId
+pub fn convert_bytes_to_accountid<AccountId>(bytes: [u8;32])-> AccountId
 	where AccountId:Encode+?Sized+Decode
 {
 	let account32: AccountId32 = bytes.into();
@@ -75,7 +86,7 @@ fn convert_bytes_to_accountid<AccountId>(bytes: [u8;32])-> AccountId
 	to_address
 }
 
-fn convert_string_to_accountid<AccountId>(account_str: &str)-> AccountId
+pub fn convert_string_to_accountid<AccountId>(account_str: &str)-> AccountId
 	where AccountId:Encode+?Sized+Decode
 {
 	let mut output = vec![0xFF; 35];
