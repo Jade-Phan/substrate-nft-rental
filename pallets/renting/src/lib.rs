@@ -47,15 +47,21 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn cancel_order)]
-	// AccountId => List of lending hash id
+	// Hashing order => Detail of canceled order
 	pub(super) type CancelOrder<T: Config> =
 	StorageMap<_, Blake2_128Concat, Vec<u8>, Order, OptionQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn rental)]
+	#[pallet::getter(fn rental_info)]
 	// Hash Id -> Renting Info
-	pub(super) type Rental<T: Config> =
+	pub(super) type RentalInfo<T: Config> =
 	StorageMap<_, Blake2_128Concat, Vec<u8>, Order, OptionQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn token_rental)]
+	// TokenId -> Hash info of order
+	pub(super) type TokenRental<T: Config> =
+	StorageMap<_, Blake2_128Concat, Vec<u8>, Vec<u8>, OptionQuery>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
@@ -82,6 +88,14 @@ pub mod pallet {
 		AlreadyCanceled,
 		NotOwnerOfOrder,
 	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_finalize(_n: BlockNumberFor<T>) {
+			todo!()
+		}
+	}
+
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
 	// These functions materialize as "extrinsics", which are often compared to transactions.
@@ -110,12 +124,16 @@ pub mod pallet {
 			Self::transfer_asset(&lender,&borrower, fulfilled_order.clone());
 			let hash_order = fulfilled_order.clone().encode();
 			let token_id = fulfilled_order.clone().token;
-			Rental::<T>::mutate(hash_order.clone(), |order| {
+			RentalInfo::<T>::mutate(hash_order.clone(), |order| {
 				*order = Some(fulfilled_order);
 			});
 			Borrowers::<T>::mutate(borrower.clone(), |orders| {
-				orders.push(hash_order);
+				orders.push(hash_order.clone());
 			});
+			TokenRental::<T>::mutate(token_id.clone(),|info|{
+				*info= Some(hash_order.clone());
+			});
+			
 			Self::deposit_event(Event::MatchOrder(lender, borrower,token_id));
 			Ok(())
 		}
@@ -140,7 +158,17 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(35_678_000)]
-		pub fn stop_renting(origin: OriginFor<T>, hash_order: Vec<u8>) -> DispatchResult{
+		pub fn stop_renting(origin: OriginFor<T>, token_id: Vec<u8>) -> DispatchResult{
+			let caller = ensure_signed(origin)?;
+			let hash_id = Self::token_rental(token_id).unwrap();
+			let order_info = Self::rental_info(hash_id).unwrap();
+
+			// check the order to return token
+			ensure!(caller == order.borrower, Error::<T>::NotMatchBorrower);
+			ensure!(caller == T::TokenNFT::owner_of_token(order.token_id),Error::<T>::NotOwner);
+
+			// transfer to the lender
+			T::TokenNFT::transfer(order.borrower,order.lender, order.token);
 			Ok(())
 		}
 	}
@@ -230,10 +258,9 @@ impl<T: Config> Pallet<T> {
 
 	fn transfer_asset(lender:&T::AccountId, borrower:&T::AccountId,order:Order) {
 		let _ = T::TokenNFT::transfer(lender.clone(), borrower.clone(), order.token);
-		let _ = T::Currency::transfer(&lender,&borrower,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
+		let _ = T::Currency::transfer(&borrower,&lender,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
 	}
 
 }
-
 
 
