@@ -11,7 +11,9 @@
   pub use pallet::*;
   use pallet_nft_currency::NonFungibleToken;
   use lite_json::{json_parser::parse_json};
-mod order;
+  use sp_runtime::traits::BlockNumberProvider;
+
+  mod order;
   mod convert;
 use convert::*;
   pub use order::Order;
@@ -63,6 +65,12 @@ pub mod pallet {
 	pub(super) type TokenRental<T: Config> =
 	StorageMap<_, Blake2_128Concat, Vec<u8>, Vec<u8>, OptionQuery>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn due_block)]
+	// TokenId -> Hash info of order
+	pub(super) type DueBlock<T: Config> =
+	StorageMap<_, Blake2_128Concat, T::BlockNumber, Vec<Vec<u8>>, ValueQuery>;
+
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
 	#[pallet::event]
@@ -70,6 +78,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		MatchOrder(T::AccountId, T::AccountId, Vec<u8>),
 		CancelOrder(Vec<u8>),
+		StopRenting(Vec<u8>, T::AccountId),
 	}
 
 	// Errors inform users that something went wrong.
@@ -125,7 +134,7 @@ pub mod pallet {
 			let hash_order = fulfilled_order.clone().encode();
 			let token_id = fulfilled_order.clone().token;
 			RentalInfo::<T>::mutate(hash_order.clone(), |order| {
-				*order = Some(fulfilled_order);
+				*order = Some(fulfilled_order.clone());
 			});
 			Borrowers::<T>::mutate(borrower.clone(), |orders| {
 				orders.push(hash_order.clone());
@@ -133,7 +142,13 @@ pub mod pallet {
 			TokenRental::<T>::mutate(token_id.clone(),|info|{
 				*info= Some(hash_order.clone());
 			});
-			
+
+			let due_block = Self::get_due_block(fulfilled_order.due_date);
+			log::info!("Future block : {:?}", due_block);
+			DueBlock::<T>::mutate(due_block.clone(),|orders| {
+				orders.push(hash_order.clone());
+			});
+
 			Self::deposit_event(Event::MatchOrder(lender, borrower,token_id));
 			Ok(())
 		}
@@ -161,14 +176,16 @@ pub mod pallet {
 		pub fn stop_renting(origin: OriginFor<T>, token_id: Vec<u8>) -> DispatchResult{
 			let caller = ensure_signed(origin)?;
 			let hash_id = Self::token_rental(token_id).unwrap();
-			let order_info = Self::rental_info(hash_id).unwrap();
+			let order = Self::rental_info(hash_id).unwrap();
+			let lender: T::AccountId = convert_bytes_to_accountid(order.lender);
+			let borrower:T::AccountId = convert_bytes_to_accountid(order.borrower);
 
 			// check the order to return token
-			ensure!(caller == order.borrower, Error::<T>::NotMatchBorrower);
-			ensure!(caller == T::TokenNFT::owner_of_token(order.token_id),Error::<T>::NotOwner);
+			ensure!(caller == borrower.clone(), Error::<T>::NotMatchBorrower);
+			ensure!(caller == T::TokenNFT::owner_of_token(order.token.clone()),Error::<T>::NotOwner);
 
 			// transfer to the lender
-			T::TokenNFT::transfer(order.borrower,order.lender, order.token);
+			T::TokenNFT::transfer(borrower, lender, order.token);
 			Ok(())
 		}
 	}
@@ -237,7 +254,7 @@ impl<T: Config> Pallet<T> {
 				order.token = token;
 			} else if k == "due_date".as_bytes().to_vec(){
 				let value = data.1.to_number().unwrap().integer;
-				ensure!(value >= T::Timestamp::now().as_secs(), Error::<T>::TimeOver);
+				ensure!(value > T::Timestamp::now().as_secs(), Error::<T>::TimeOver);
 				order.due_date = value;
 			}
 		}
@@ -261,6 +278,15 @@ impl<T: Config> Pallet<T> {
 		let _ = T::Currency::transfer(&borrower,&lender,order.fee.saturated_into(),ExistenceRequirement::KeepAlive);
 	}
 
+	fn get_due_block(due_date:u64) -> T::BlockNumber{
+		let current_block_number = frame_system::Pallet::<T>::current_block_number();
+		let one_day:u32 = 86400/6;
+		log::info!("Current block : {:?}", current_block_number);
+		let total_renting_days:u32 = Self::calculate_day_renting(due_date) as u32;
+		let target_block = current_block_number + (total_renting_days/one_day).into();
+
+		target_block
+	}
 }
 
 
