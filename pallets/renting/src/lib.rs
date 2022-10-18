@@ -79,6 +79,7 @@ pub mod pallet {
 		MatchOrder(T::AccountId, T::AccountId, Vec<u8>),
 		CancelOrder(Vec<u8>),
 		StopRenting(Vec<u8>, T::AccountId),
+		ReturnAsset(T::AccountId, T::AccountId, Vec<u8>),
 	}
 
 	// Errors inform users that something went wrong.
@@ -96,12 +97,28 @@ pub mod pallet {
 		NotCaller,
 		AlreadyCanceled,
 		NotOwnerOfOrder,
+		NotQualified,
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_n: BlockNumberFor<T>) {
-			todo!()
+			if DueBlock::<T>::contains_key(_n) {
+				for hash_id in Self::due_block(_n).into_iter() {
+					let order = Self::rental_info(hash_id.clone()).unwrap();
+					let lender: T::AccountId = convert_bytes_to_accountid(order.lender);
+					let borrower:T::AccountId = convert_bytes_to_accountid(order.borrower);
+					// transfer asset back to lender
+					T::TokenNFT::transfer(borrower.clone(), lender.clone(), order.token.clone());
+
+					RentalInfo::<T>::remove(hash_id.clone());
+					Borrowers::<T>::mutate(borrower.clone(), |orders| {
+						orders.retain(|x| *x != hash_id);
+					});
+					Self::deposit_event(Event::ReturnAsset(borrower, lender, order.token));
+				}
+			}
+
 		}
 	}
 
@@ -210,7 +227,7 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn calculate_day_renting(due_date:u64) -> u64{
+	fn calculate_sec_renting(due_date:u64) -> u64{
 		let part = due_date-T::Timestamp::now().as_secs();
 		part/24
 	}
@@ -284,7 +301,7 @@ impl<T: Config> Pallet<T> {
 		log::info!("Current block : {:?}", current_block_number);
 		let total_renting_days:u32 = Self::calculate_day_renting(due_date) as u32;
 		let target_block = current_block_number + (total_renting_days/one_day).into();
-
+		ensure!(target_block > current_block_number, Error::<T>::NotQualified);
 		target_block
 	}
 }
