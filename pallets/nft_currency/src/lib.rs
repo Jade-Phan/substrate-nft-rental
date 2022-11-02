@@ -103,8 +103,8 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(33_963_000 + T::DbWeight::get().reads_writes(4, 3))]
-		pub fn mint_to(_origin: OriginFor<T>, to: T::AccountId) -> DispatchResult {
-			let token_id = <Self as NonFungibleToken<_>>::mint(to.clone())?;
+		pub fn mint_to(_origin: OriginFor<T>, to: T::AccountId, total_supply: u64, initial_mint: u64) -> DispatchResult {
+			let token_id = <Self as NonFungibleToken<_>>::mint(to.clone(), total_supply, initial_mint)?;
 			Self::deposit_event(Event::Mint(to,token_id));
 			Ok(())
 		}
@@ -186,7 +186,7 @@ impl<T: Config> NonFungibleToken<T::AccountId> for Pallet<T>{
 		account
 	}
 
-	fn mint(owner: T::AccountId) -> Result<Vec<u8>, DispatchError>  {
+	fn mint(owner: T::AccountId, total_supply: u64, initial_mint: u64) -> Result<Vec<u8>, DispatchError>  {
 		let token_id = Self::gen_token_id();
 		TotalTokens::<T>::mutate(|value| *value+=1);
 		OwnerOf::<T>::mutate(token_id.clone(), |account| {

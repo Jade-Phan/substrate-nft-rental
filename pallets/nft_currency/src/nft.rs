@@ -7,7 +7,7 @@ pub trait NonFungibleToken<AccountId>{
 	fn total() -> u32;
 	fn owner_of_token(token_id: Vec<u8>) -> AccountId;
 
-	fn mint(owner:AccountId) -> Result<Vec<u8>,DispatchError>;
+	fn mint(owner:AccountId, totalSupply: u32, initialMint : u32) -> AccountId;<Vec<u8>,DispatchError>;
 	fn transfer(from: AccountId, to: AccountId, token_id: Vec<u8>) -> DispatchResult;
 	fn set_token_uri(token_id: Vec<u8>, token_uri: Vec<u8>) -> DispatchResult;
 	fn is_approve_for_all(account_approve:(AccountId,AccountId)) -> bool;

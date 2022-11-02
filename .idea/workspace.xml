@@ -7,9 +7,10 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="52d3dbc1-024f-4870-a65a-eeb0179a2ee2" name="Changes" comment="[update] hook">
+    <list default="true" id="52d3dbc1-024f-4870-a65a-eeb0179a2ee2" name="Changes" comment="[update] add block number">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pallets/renting/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/renting/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pallets/nft_currency/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/nft_currency/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pallets/nft_currency/src/nft.rs" beforeDir="false" afterPath="$PROJECT_DIR$/pallets/nft_currency/src/nft.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -52,7 +53,7 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/home/demo/IdeaProjects/substrate-nft-rental-Jade&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/demo/IdeaProjects/marketplace_core&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -157,6 +158,12 @@
       <workItem from="1665934620276" duration="599000" />
       <workItem from="1665968951471" duration="148000" />
       <workItem from="1666024158039" duration="4801000" />
+      <workItem from="1666055171308" duration="85000" />
+      <workItem from="1666107731287" duration="1255000" />
+      <workItem from="1666197402804" duration="599000" />
+      <workItem from="1666410263625" duration="279000" />
+      <workItem from="1666414320733" duration="1539000" />
+      <workItem from="1667348586486" duration="796000" />
     </task>
     <task id="LOCAL-00001" summary="[update] pallet renting">
       <created>1661739706711</created>
@@ -256,7 +263,14 @@
       <option name="project" value="LOCAL" />
       <updated>1665969057903</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="[update] add block number">
+      <created>1666055195612</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1666055195612</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -293,7 +307,8 @@
     <MESSAGE value="[update] match order and transfer" />
     <MESSAGE value="[update] fix bug transfer asset" />
     <MESSAGE value="[update] hook" />
-    <option name="LAST_COMMIT_MESSAGE" value="[update] hook" />
+    <MESSAGE value="[update] add block number" />
+    <option name="LAST_COMMIT_MESSAGE" value="[update] add block number" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
