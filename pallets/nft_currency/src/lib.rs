@@ -247,4 +247,8 @@ impl<T: Config> NonFungibleToken<T::AccountId> for Pallet<T>{
 		Ok(())
 	}
 
+	fn burn_all_tokens(token_id: Vec<u8>) -> DispatchResult {
+		ensure!()
+	}
+
 }
